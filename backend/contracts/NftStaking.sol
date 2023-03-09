@@ -27,7 +27,7 @@ contract NftStaking is ERC1155Holder {
     uint256 private blockReward;
     uint256 private tokenPool;
     
-    uint256 public poolKEY;
+    uint256 public poolKEY; // NFT ID
 
     bool internal locked;
     bool public paused;
@@ -70,7 +70,7 @@ contract NftStaking is ERC1155Holder {
      * @param nftAddress - ERC1155 NFT Address
      * @param _tokenPool - ERC20 supply reward
      * @param _blockReward - reward per block in Wei
-     * @param _key - pool key (NFT key)
+     * @param _key - pool key (NFT ID)
      */
     constructor(address rewardTokenAddress, address nftAddress, uint256 _tokenPool, uint256 _blockReward, uint256 _key) {
         owner = msg.sender;
@@ -83,6 +83,9 @@ contract NftStaking is ERC1155Holder {
 
     /* ========== FUNCTIONS ========== */
 
+    /**
+     * @dev stake selected amount of NFT
+     */
     function stake(uint256 amount, bytes memory data) public noReentrant onlyWhenNotPaused {
         require(amount > 0, "Can't stake 0");
         require(tokenPool > 0, "no rewards left");
@@ -94,7 +97,7 @@ contract NftStaking is ERC1155Holder {
             staker.rewardPending += calculateReward(staker.totalNftStaked, staker.lastUpdateAt);
         }
         
-        // update Nft count
+        // update user's Nft count
         staker.totalNftStaked += amount;
         _totalStaked += amount;
 
@@ -106,7 +109,9 @@ contract NftStaking is ERC1155Holder {
         emit Staked(msg.sender, amount, staker.totalNftStaked);
     }
 
-
+    /**
+     * @dev unstake selected amount of NFT
+     */
     function unstake(uint256 amount, bytes memory data) public noReentrant onlyWhenNotPaused {
         require(msg.sender != address(0), "transfer from the zero address");
         require(stakers[msg.sender].totalNftStaked >= amount, "amount exceeds your total staked balance");
@@ -116,7 +121,7 @@ contract NftStaking is ERC1155Holder {
         // update pending rewards
         staker.rewardPending += calculateReward(staker.totalNftStaked, staker.lastUpdateAt);
         
-        // update Nft count
+        // update user's Nft count
         staker.totalNftStaked -= amount;
         _totalStaked -= amount;
 
@@ -141,7 +146,8 @@ contract NftStaking is ERC1155Holder {
 
         uint256 reward;
 
-        if (staker.rewardPending > tokenPool) {
+        // check if user's pending balance has exceeded token pool
+        if (earned(msg.sender) > tokenPool) {
             reward = tokenPool;
             tokenPool = 0;
         } else {
@@ -181,7 +187,7 @@ contract NftStaking is ERC1155Holder {
     }
 
     /**
-     * @dev READ-ONLY function that will calculate pending reward
+     * @dev function that will calculate pending reward
      */
     function calculateReward(uint staked, uint lastUpdate)
         private
@@ -190,7 +196,6 @@ contract NftStaking is ERC1155Holder {
     {
         return (staked == 0) ? 0 : staked * blockReward * (block.number - lastUpdate);
     }
-
 
     function getPoolKeyToken() public view returns (uint256) {
         return poolKEY;

@@ -36,9 +36,15 @@ contract GardenNFT is ERC1155 {
         mintPrice = _mintPrice;
     }
 
+    /**
+     * @param id - token ID
+     * @param numberOfTokens - amount of NFTs to mint
+     */
     function mint(uint256 id, uint256 numberOfTokens) public payable onlyWhenNotPaused {
         require(numberOfTokens != 0, "You need to mint at least 1 token");
         require((numberOfTokens * mintPrice) == msg.value, "Not enough Ether sent.");
+
+        treasury += (numberOfTokens * mintPrice);
 
         _mint(msg.sender, id, numberOfTokens, "");
     }
@@ -53,7 +59,9 @@ contract GardenNFT is ERC1155 {
         _setURI(newuri);
     }
 
-    // pause contract in case of emergency
+    /**
+     * @dev pause contract in case of emergency
+     */
     function setPaused(bool val) public onlyOwner {
         _paused = val;
     }
@@ -62,6 +70,9 @@ contract GardenNFT is ERC1155 {
         owner = newOwner;
     }
 
+    /**
+     * @dev withdraw fees from the contract
+     */
     function collectFee() public onlyOwner {
         require (treasury > 0, "Treasury is empty");
         (bool success, ) = msg.sender.call{value: treasury}("");

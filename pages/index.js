@@ -55,6 +55,7 @@ export default function Home() {
   const [priceNFT, setPriceNFT] = useState();
 
   //user balances
+  const [userCeloBalance, setUserCeloBalance] = useState();
   const [userStakedBalance, setUserStakedBalance] = useState();
   const [userPendingRewards, setUserPendingRewards] = useState();
   const [userNFTBalance, setUserNFTBalance] = useState();
@@ -90,12 +91,14 @@ export default function Home() {
   });
 
   const updateUserBalances = async (address) => {
+    const celoBalance = ethers.utils.formatEther(await signer.getBalance());
+
     const tokenBalance = ethers.utils.formatEther(
       await tokenContract.balanceOf(address)
     );
+    console.log(tokenBalance);
     const stakedTokens = await stakingContract.totalStakedFor(address);
 
-    // format bigNumber
     const pendingRewards = await stakingContract.earned(address);
 
     const nft = await nftContract.balanceOf(address, NFT_KEY);
@@ -108,6 +111,7 @@ export default function Home() {
       stakingContract.address
     );
 
+    setUserCeloBalance(celoBalance);
     setUserTokenBalance(tokenBalance);
     setUserStakedBalance(stakedTokens);
     setUserPendingRewards(pendingRewards);
@@ -176,17 +180,16 @@ export default function Home() {
       ethers.utils.parseEther(inputValue.toString())
     );
 
-    // CHECK CELO BALANCE, CAN'T SPEND MORE CELO THAN HAVE
-    // if (formatNumber(userCeloBalance) < inputValue) {
-    //     toast({
-    //         title: "Not Enough Funds",
-    //         description: "Please make sure you have enough funds to proceed.",
-    //         status: "error",
-    //         duration: 6000,
-    //         isClosable: true,
-    //     })
-    //     return
-    // }
+    if (userCeloBalance < inputValue) {
+      toast({
+        title: "Not Enough Funds",
+        description: "Please make sure you have enough funds to proceed.",
+        status: "error",
+        duration: 6000,
+        isClosable: true,
+      });
+      return;
+    }
 
     const cost = (input.value * priceNFT).toString();
     const approvePurchaseTX = await nftContract.mint(NFT_KEY, input.value, {
@@ -496,7 +499,7 @@ export default function Home() {
   };
 
   const getMaxNFT = async () => {
-    if (!isConnected || !priceNFT) {
+    if (!isConnected) {
       toast({
         title: "Connect Wallet",
         description:
@@ -507,6 +510,7 @@ export default function Home() {
       });
       return;
     }
+    document.querySelector("#inputGetNFT").value = parseInt(userCeloBalance);
   };
 
   const getMaxStakeNFT = async () => {
@@ -667,11 +671,11 @@ export default function Home() {
                     placeholder="NFT Amount"
                     id="inputGetNFT"
                   />
-                  {/* <InputRightElement width="4.5rem">
+                  <InputRightElement width="4.5rem">
                     <Button h="1.75rem" size="sm" onClick={getMaxNFT}>
                       max
                     </Button>
-                  </InputRightElement> */}
+                  </InputRightElement>
                 </InputGroup>
                 <Button
                   colorScheme="linkedin"

@@ -1187,7 +1187,6 @@ export const stakingABI = [
     type: "function",
   },
 ];
-
-export const tokenAddress = "0xB20acceeD0a5Ef3DA2231DcE0D6aFD6297101c4a";
-export const nftAddress = "0x6820fe893fD4Dd26A1B519B5f9e8694C9Fb86142";
-export const stakingAddress = "0x278E82768776c69B315b7C0b34650ae479583F14";
+export const tokenAddress = "0x3C6eeC559d7a8ECfaB88d29e042Aac4e6e0a63a6";
+export const nftAddress = "0xf046E538fff7b03940346FF07E120bbB2dD8bcc1";
+export const stakingAddress = "0x26C596e3d3eFC4a9D2F31b563CE60A4a5922da31";
