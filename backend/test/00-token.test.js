@@ -1,14 +1,11 @@
-const { assert, expect } = require("chai")
+const { assert } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, INITIAL_SUPPLY } = require("../helper-hardhat-config")
-// const { moveBlocks } = require("../utils/move-blocks")
 
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("ERC20 Token Unit Tests", function () {
           let token, tokenContract
-
-          const multiplier = 10 ** 18
 
           beforeEach(async () => {
               accounts = await ethers.getSigners()

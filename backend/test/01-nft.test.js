@@ -1,49 +1,40 @@
-const { assert } = require("chai")
+const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains } = require("../helper-hardhat-config")
+// const { moveBlocks } = require("../utils/move-blocks")
 
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Garden NFT Unit Tests", function () {
-          let cuteDogNft, deployer
+          let deployer
+          const mintPrice = ethers.utils.parseEther("0.1")
+          const nftAmount = 5
+          const tokenId = 50
 
           beforeEach(async () => {
               accounts = await ethers.getSigners()
               deployer = accounts[0]
-              await deployments.fixture(["all"])
-              gardenNft = await ethers.getContract("GardenNFT")
-          })
+              user1 = accounts[1]
 
+              await deployments.fixture(["all"])
+
+              gardenContract = await ethers.getContractFactory("GardenNFT")
+              gardenNft = await gardenContract.deploy(mintPrice)
+          })
           describe("Constructor", () => {
               it("Initializes the NFT Correctly", async () => {
-                  const name = await gardenNft.name()
-                  const symbol = await gardenNft.symbol()
-                  const tokenCounter = await gardenNft.getTokenCounter()
-                  assert.equal(name, "GardenNFT")
-                  assert.equal(symbol, "GRDN")
-                  assert.equal(tokenCounter.toString(), "0")
+                  const _mintPrice = ethers.utils.formatEther(await gardenNft.mintPrice())
+                  assert.equal(_mintPrice, ethers.utils.formatEther(mintPrice))
               })
           })
-          //test02
-          //   describe("Mint NFT", () => {
-          //       beforeEach(async () => {
-          //           const txResponse = await gardenNft.mintNft()
-          //           await txResponse.wait(1)
-          //       })
-          //       it("Allows users to mint an NFT, and updates appropriately", async function () {
-          //           const tokenURI = await gardenNft.tokenURI(0)
-          //           const tokenCounter = await gardenNft.getTokenCounter()
+          describe("Mint NFT", () => {
+              it("can mint batch NFT", async function () {
+                  const fee = ethers.utils.formatEther(mintPrice) * nftAmount
 
-          //           assert.equal(tokenCounter.toString(), "1")
-          //           assert.equal(tokenURI, await gardenNft.TOKEN_URI())
-          //       })
-          //       it("Show the correct balance and owner of an NFT", async function () {
-          //           const deployerAddress = deployer.address
-          //           const deployerBalance = await gardenNft.balanceOf(deployerAddress)
-          //           const owner = await gardenNft.ownerOf("0")
-
-          //           assert.equal(deployerBalance.toString(), "1")
-          //           assert.equal(owner, deployerAddress)
-          //       })
-          //   })
+                  const txResponse = await gardenNft
+                      .connect(user1)
+                      .mint(tokenId, nftAmount, { value: ethers.utils.parseEther(fee.toString()) })
+                  await txResponse.wait(1)
+              })
+          })
       })
