@@ -16,6 +16,7 @@ const { moveBlocks } = require("../utils/move-blocks")
               accounts = await ethers.getSigners()
               deployer = accounts[0]
               user1 = accounts[1]
+              user2 = accounts[2]
 
               await deployments.fixture(["all"])
 
@@ -96,6 +97,66 @@ const { moveBlocks } = require("../utils/move-blocks")
 
                   const tx2 = await nftStaking.connect(user1).claim()
                   await expect(tx2).to.emit(nftStaking, "RewardsClaimed")
+              })
+          })
+
+          describe("Only owner", () => {
+              beforeEach(async () => {
+                  NftStakingConnectedContract = await nftStaking.connect(user1)
+              })
+              it("can pause contract in case of emergency", async () => {
+                  // can't access function if not the owner
+                  await expect(NftStakingConnectedContract.setPaused(true)).to.be.revertedWith(
+                      "NotOwner()"
+                  )
+                  // if owner, can set pause in case of emergency
+                  const tx = await nftStaking.connect(deployer).setPaused(true)
+                  const contractPause = await nftStaking.paused()
+                  assert.equal(contractPause, true)
+
+                  // users can't call `stake()`, `unstake()` and `claim()`functions, if contract is paused
+                  const tx1 = NftStakingConnectedContract.stake(nftAmount, tokenId)
+                  await expect(tx1).to.be.revertedWith("ContractPaused()")
+                  const tx2 = NftStakingConnectedContract.unstake(nftAmount, tokenId)
+                  await expect(tx2).to.be.revertedWith("ContractPaused()")
+                  const tx3 = NftStakingConnectedContract.claim()
+                  await expect(tx3).to.be.revertedWith("ContractPaused()")
+              })
+
+              it("can change Block Reward", async () => {
+                  const newBlockReward = ethers.utils.parseEther("0.0001")
+                  // can't access function if not the owner
+                  await expect(
+                      NftStakingConnectedContract.changeBlockReward(newBlockReward)
+                  ).to.be.revertedWith("NotOwner()")
+
+                  // if owner, can set new block reward
+                  const tx = await nftStaking.connect(deployer).changeBlockReward(newBlockReward)
+              })
+              it("can change Pool Key (NFT id)", async () => {
+                  const newPoolKey = 3
+                  // can't access function if not the owner
+                  await expect(
+                      NftStakingConnectedContract.changePoolKeyToken(newPoolKey)
+                  ).to.be.revertedWith("NotOwner()")
+
+                  // if owner, can set new block reward
+                  const tx = await nftStaking.connect(deployer).changePoolKeyToken(newPoolKey)
+                  const poolKey = await nftStaking.getPoolKeyToken()
+                  assert.equal(poolKey, newPoolKey)
+                  expect(tx).to.emit(nftStaking, "KeyTokenChanged")
+              })
+              it("can transfer ownership of the contract", async function () {
+                  // can't access function if not the owner
+                  await expect(
+                      NftStakingConnectedContract.transferOwnership(user2.address)
+                  ).to.be.revertedWith("NotOwner()")
+
+                  // if owner, can transfer ownership
+                  const tx = await nftStaking.connect(deployer).transferOwnership(user2.address)
+                  await tx.wait(1)
+                  const newOwner = await nftStaking.owner()
+                  assert.equal(newOwner, user2.address)
               })
           })
       })
