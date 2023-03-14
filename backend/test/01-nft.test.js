@@ -21,6 +21,9 @@ const { developmentChains } = require("../helper-hardhat-config")
               gardenContract = await ethers.getContractFactory("GardenNFT")
               gardenNft = await gardenContract.deploy(mintPrice)
           })
+          it("was deployed", async () => {
+              assert(gardenNft.address)
+          })
           describe("Constructor", () => {
               it("Initializes the NFT Correctly", async () => {
                   const _mintPrice = ethers.utils.formatEther(await gardenNft.mintPrice())
@@ -35,6 +38,28 @@ const { developmentChains } = require("../helper-hardhat-config")
                       .connect(user1)
                       .mint(tokenId, nftAmount, { value: ethers.utils.parseEther(fee.toString()) })
                   await txResponse.wait(1)
+              })
+          })
+
+          describe("Only Owner", () => {
+              it("can collect mint fees", async function () {
+                  const fee = ethers.utils.formatEther(mintPrice) * nftAmount
+
+                  const gardenNftConnectedContract = await gardenNft.connect(user1)
+
+                  const txResponse = await gardenNftConnectedContract.mint(tokenId, nftAmount, {
+                      value: ethers.utils.parseEther(fee.toString()),
+                  })
+                  await txResponse.wait(1)
+
+                  // can't access function if not the owner
+                  await expect(gardenNftConnectedContract.collectFee()).to.be.revertedWith(
+                      "NotOwner()"
+                  )
+
+                  // if owner, can withdraw fee from contract
+                  const tx = await gardenNft.connect(deployer).collectFee()
+                  await tx.wait(1)
               })
           })
       })

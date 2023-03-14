@@ -514,7 +514,7 @@ export default function Home() {
   };
 
   const getMaxStakeNFT = async () => {
-    if (!isConnected || !userNFTBalance) {
+    if (!isConnected) {
       toast({
         title: "Connect Wallet",
         description:
@@ -530,7 +530,7 @@ export default function Home() {
   };
 
   const getMaxUnstakeNFT = async () => {
-    if (!isConnected || !userStakedBalance) {
+    if (!isConnected) {
       toast({
         title: "Connect Wallet",
         description:

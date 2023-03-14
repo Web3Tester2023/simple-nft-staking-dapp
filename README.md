@@ -16,7 +16,7 @@ where `last update block number` is when user last time called mutable function 
 
 ### How to install and use
 
-To set up the repository and run the marketplace locally, run the below
+To set up the repository and run project locally, run the below
 
 ```bash
 
