@@ -1,7 +1,7 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, INITIAL_SUPPLY, BLOCK_REWARD } = require("../helper-hardhat-config")
-const { moveBlocks } = require("../utils/move-blocks")
+const { moveBlocksNoComment } = require("../utils/move-blocks")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -45,7 +45,7 @@ const { moveBlocks } = require("../utils/move-blocks")
                   .connect(user1)
                   .mint(tokenId, nftAmount, { value: ethers.utils.parseEther(fee.toString()) })
               await txResponse.wait(1)
-              // user1 approve NFTs
+              // user1 approve NFTs to Staking Nft contract
               const approveTX = await gardenNft
                   .connect(user1)
                   .setApprovalForAll(nftStaking.address, true)
@@ -77,6 +77,13 @@ const { moveBlocks } = require("../utils/move-blocks")
                       "Staked"
                   )
               })
+              it("shows correct number NFTs staked by user", async () => {
+                  const amount = 2
+                  const nftStakingConnectedContract = await nftStaking.connect(user1)
+                  await nftStakingConnectedContract.stake(amount, tokenId)
+                  const staked = await nftStaking.totalStakedFor(user1.address)
+                  assert.equal(staked, amount)
+              })
           })
 
           describe("unstake()", () => {
@@ -87,16 +94,72 @@ const { moveBlocks } = require("../utils/move-blocks")
               })
           })
           describe("claim()", () => {
-              it("allow users to claim rewards and emit event", async () => {
+              beforeEach(async () => {
                   const tx1 = await nftStaking.connect(user1).stake(nftAmount, tokenId)
-
-                  // wait for rewards to accumulate
+              })
+              it("revert function, if user didn't stake NFT", async () => {
+                  await expect(nftStaking.connect(user2).claim()).to.be.revertedWith(
+                      "stake to start earning rewards"
+                  )
+              })
+              it("allow users to claim rewards and emit event", async () => {
+                  const blockNumber = 2
+                  // wait for rewards to accumulate, move 2 blocks
                   if ((network.config.chainId = "31337")) {
-                      await moveBlocks(1, (sleepAmount = 10))
+                      await moveBlocksNoComment(blockNumber, (sleepAmount = 10))
                   }
 
+                  // calculates token rewards correctly
+                  const earned = ethers.utils.formatEther(await nftStaking.earned(user1.address))
+                  const expectEarned = ethers.utils.formatEther(
+                      blockNumber * BLOCK_REWARD * nftAmount
+                  )
+                  assert.equal(earned, expectEarned)
+
+                  // can claim rewards and emit event
                   const tx2 = await nftStaking.connect(user1).claim()
                   await expect(tx2).to.emit(nftStaking, "RewardsClaimed")
+              })
+          })
+
+          describe("Empty ERC20 Reward pool", () => {
+              beforeEach(async () => {
+                  // change reward block to initial supply ERC20 reward token
+                  const deployerConnected = await nftStaking.connect(deployer)
+                  const newBlockReward = ethers.utils.parseEther(INITIAL_SUPPLY)
+                  const tx1 = await deployerConnected.changeBlockReward(newBlockReward)
+
+                  // user1 will drain reward pool
+                  const tx2 = await nftStaking.connect(user1).stake(2, tokenId)
+
+                  // wait for rewards to accumulate, move 1 block
+                  if ((network.config.chainId = "31337")) {
+                      await moveBlocksNoComment(1, (sleepAmount = 10))
+                  }
+
+                  const tx3 = await nftStaking.connect(user1).claim()
+              })
+
+              it("users can't stake, if reward pool is empty", async () => {
+                  await expect(nftStaking.connect(user1).stake(2, tokenId)).to.be.revertedWith(
+                      "no rewards left"
+                  )
+              })
+
+              it("users can't claim, if reward pool is empty", async () => {
+                  await expect(nftStaking.connect(user1).claim()).to.be.revertedWith(
+                      "no rewards left"
+                  )
+              })
+              it("users can unstake their NFTs, if reward pool is empty", async () => {
+                  await expect(nftStaking.connect(user1).unstake(2, tokenId)).to.emit(
+                      nftStaking,
+                      "Unstaked"
+                  )
+              })
+              it("shows 0 earned rewards, if reward pool is empty", async () => {
+                  const earned = await nftStaking.earned(user1.address)
+                  assert.equal(earned, 0)
               })
           })
 

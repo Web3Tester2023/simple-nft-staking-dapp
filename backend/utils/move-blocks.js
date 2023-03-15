@@ -4,6 +4,7 @@ function sleep(timeInMs) {
     return new Promise((resolve) => setTimeout(resolve, timeInMs))
 }
 
+// with comments
 async function moveBlocks(amount, sleepAmount = 0) {
     console.log("Moving blocks...")
     for (let index = 0; index < amount; index++) {
@@ -19,7 +20,21 @@ async function moveBlocks(amount, sleepAmount = 0) {
     console.log(`Moved ${amount} blocks`)
 }
 
+// w/o comments
+async function moveBlocksNoComment(amount, sleepAmount = 0) {
+    for (let index = 0; index < amount; index++) {
+        await network.provider.request({
+            method: "evm_mine",
+            params: [],
+        })
+        if (sleepAmount) {
+            await sleep(sleepAmount)
+        }
+    }
+}
+
 module.exports = {
     moveBlocks,
+    moveBlocksNoComment,
     sleep,
 }
