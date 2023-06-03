@@ -9,7 +9,7 @@ import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 const celoChain = {
   id: 56,
   name: "Binance Smart Chain",
-  network: "binance",
+  network: "BNB Chain",
   nativeCurrency: {
     decimals: 18,
     name: "Binance Smart Chain",
