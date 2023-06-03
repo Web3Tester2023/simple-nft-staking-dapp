@@ -6,13 +6,13 @@ import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { configureChains, createClient, WagmiConfig } from "wagmi";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 
-const celoChain = {
+const activeChain = {
   id: 56,
   name: "Binance Smart Chain",
   network: "BNB Chain",
   nativeCurrency: {
     decimals: 18,
-    name: "Binance Smart Chain",
+    name: "BNB",
     symbol: "BNB",
   },
   rpcUrls: {
