@@ -7,32 +7,32 @@ import { configureChains, createClient, WagmiConfig } from "wagmi";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 
 const celoChain = {
-  id: 44787,
-  name: "Celo Alfajores Testnet",
-  network: "alfajores",
+  id: 56,
+  name: "Binance Smart Chain",
+  network: "binance",
   nativeCurrency: {
     decimals: 18,
-    name: "Celo",
-    symbol: "CELO",
+    name: "Binance Smart Chain",
+    symbol: "BNB",
   },
   rpcUrls: {
-    default: "https://alfajores-forno.celo-testnet.org",
+    default: "https://bsc-dataseed.binance.org",
   },
   blockExplorers: {
     default: {
-      name: "CeloScan",
-      url: "https://alfajores.celoscan.io",
+      name: "BSC SCAN",
+      url: "https://bscscan.com",
     },
   },
-  testnet: true,
+  testnet: false,
 };
 
 const { chains, provider } = configureChains(
-  [celoChain],
+  [binance],
   [
     jsonRpcProvider({
       rpc: (chain) => {
-        if (chain.id !== celoChain.id) return null;
+        if (chain.id !== binance.id) return null;
         return { http: chain.rpcUrls.default };
       },
     }),
@@ -40,7 +40,7 @@ const { chains, provider } = configureChains(
 );
 
 const { connectors } = getDefaultWallets({
-  appName: "Celo NFT Marketplace",
+  appName: "PunkPEPE OG NFT STAKING",
   chains,
 });
 
