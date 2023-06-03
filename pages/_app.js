@@ -31,10 +31,10 @@ const { chains, provider } = configureChains(
   [binance],
   [
     jsonRpcProvider({
-      rpc: (chain) => {
-        if (chain.id !== binance.id) return null;
-        return { http: chain.rpcUrls.default };
-      },
+    rpc: (chain) => {
+      if (chain.name !== "Binance Smart Chain") return null;
+      return { http: chain.rpcUrls[0] };
+    },
     }),
   ]
 );
